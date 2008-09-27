@@ -314,42 +314,120 @@ _mpd_connect (mpd *self)
   return MPD_SUCCESS;
 }
 
-#define BUF_LEN 64
-
 #define OK_MPD "OK MPD"
 #define OFFSET (sizeof (OK_MPD))
+
+static void
+_get_response (int fd, char **bufp, size_t *size)
+{
+  size_t len = strlen (*bufp);
+  char buf[BUFSIZ];
+  ssize_t count;
+
+  for ( ; ; )
+    {
+      if (len + BUFSIZ > *size)
+	{
+	  *size *= 2;
+	  char *new_buf = realloc (*bufp, *size);
+	  if (!new_buf)
+	    goto error;
+	  *bufp = new_buf;
+	}
+
+      count = recv (fd, buf, BUFSIZ - 1, 0);
+      if (count < 0)
+	goto error;
+
+      buf[count] = '\0';
+      strcpy (*bufp + len, buf);
+      len += count;
+      
+      if (count > 1)
+	{
+	  char *s = memrchr (buf, '\n', count - 1);
+	  s = s ? s + 1 : buf;
+	  if (strncmp(s, "OK", 2) == 0)
+	    return;
+	}
+    }
+
+ error:
+  free (*bufp);
+  *bufp = NULL;
+}
+
+static mpd_error
+_mpd_recv (mpd *self, char **bufp)
+{
+  size_t size;
+
+  assert (bufp != NULL);
+
+  size = BUFSIZ;
+  *bufp = malloc (size);
+  if (*bufp == NULL)
+    goto error;
+
+  **bufp = '\0';
+
+  _get_response (self->socket, bufp, &size);
+
+  if (*bufp == NULL)
+    goto error;
+
+  return MPD_SUCCESS;
+
+ error:
+    return _mpd_error (self, MPD_ERROR, strerror (errno));
+}
 
 static mpd_error
 _mpd_verify (mpd *self)
 {
-  char buf[BUF_LEN];
-  ssize_t count;
+  char *buf;
   char *p;
 
-  count = recv (self->socket, buf, BUF_LEN - 1, 0);
-  if (count < 0)
-    return _mpd_error (self, MPD_ERROR, strerror (errno));
+  /* TODO: if we're not connected to MPD, then we might end up waiting
+     forever for a line that starts with "OK".  Not good, since
+     _mpd_recv() will keep allocating memory for all received data
+     until that line is received. Set a limit for time spent waiting
+     and maximum data.
 
-  buf[count] = '\0';
+     Be somewhat forgiving on the data side, at least once we have a
+     correct "OK MPD" response, since some commands (i.e. listall) may
+     return a lot of data; for instance, expect to receive at least a
+     megabyte in the case of a large collection.  My 12 gigabyte
+     collection returns about 250k for listall, with 2888 entries. */
+
+  if (_mpd_recv (self, &buf) != MPD_SUCCESS)
+    return self->last_error;
 
   if (strncmp (buf, OK_MPD, OFFSET - 1) != 0)
-    return _mpd_error (self, MPD_ERROR_NOT_MPD, NULL);
+    goto error_not_mpd;
 
-  p = (char *) memchr (&buf[OFFSET], '\n', BUF_LEN - OFFSET);
+  p = strchr (&buf[OFFSET], '\n');
   if (p == NULL)
-    return _mpd_error (self, MPD_ERROR_NOT_MPD, NULL);
+    goto error_not_mpd;
 
   self->version = strndup (buf + OFFSET, p - (buf + OFFSET));
 
   if (self->version == NULL)
-    return _mpd_error (self, MPD_ERROR, strerror (errno));
+    {
+      free (buf);
+      return _mpd_error (self, MPD_ERROR, strerror (errno));
+    }
 
   return MPD_SUCCESS;
+
+ error_not_mpd:
+  free (buf);
+  return _mpd_error (self, MPD_ERROR_NOT_MPD, NULL);
+  
 }
 
 #undef OK_MPD
 #undef OFFSET
-#undef LEN
 
 mpd_error
 mpd_connect (mpd *self)
@@ -380,84 +458,15 @@ mpd_disconnect (mpd *self)
   return MPD_SUCCESS;
 }
 
-static const char *
-_mpd_getlines (int fd, char **bufp, size_t *size)
-{
-  size_t len = strlen (*bufp);
-  char *this_line = *bufp + len;
-  char buf[BUF_LEN];
-
-  while (strchr (this_line, '\n') == NULL)
-    {
-      ssize_t count;
-
-      if (len + BUF_LEN > *size)
-	{
-	  *size *= 2;
-	  char *new_buf = realloc (*bufp, *size);
-	  if (!new_buf)
-	    goto error;
-	  *bufp = new_buf;
-	}
-
-      count = recv (fd, buf, BUF_LEN - 1, 0);
-      if (count < 0)
-	goto error;
-
-      buf[count] = '\0';
-      strcpy (*bufp + len, buf);
-      len += count;
-    }
-
-  this_line = strrchr (this_line, '\n') - 1;
-  while (this_line > *bufp && this_line[-1] != '\n' )
-    this_line--;
-  return this_line;
-
- error:
-  free (*bufp);
-  *bufp = NULL;
-  return NULL;
-}
-
-static mpd_error
-_mpd_recv (mpd *self, char **bufp)
-{
-  size_t size;
-  const char *s;
-
-  assert (bufp != NULL);
-
-  size = BUF_LEN;
-  *bufp = malloc (size);
-  if (*bufp == NULL)
-    goto error;
-
-  **bufp = '\0';
-
-  s = _mpd_getlines (self->socket, bufp, &size);
-  while (s && strncmp (s, "ACK", 3) && strncmp (s, "OK", 2))
-    s = _mpd_getlines (self->socket, bufp, &size);
-
-  if (*bufp == NULL)
-    goto error;
-
-  return MPD_SUCCESS;
-
- error:
-    return _mpd_error (self, MPD_ERROR, strerror (errno));
-}
-
 static void
 _mpd_result_split (mpd_result *r)
 {
   char *p, *q;
 
-  p = strchr (r->buf, '\n');
+  p = r->buf;
   assert (p != NULL);
-  *p = '\0';
 
-  for (p++, r->current = 0; r->current < r->count; p = q + 1, r->current++)
+  for (r->current = 0; r->current < r->count; p = q + 1, r->current++)
     {
       char *sep;
 
@@ -498,8 +507,8 @@ _mpd_result_init (mpd_result *r)
   for (r->count = 0; (p = strchr (p, '\n')); p++, r->count++)
     ;
 
-  /* remove the status line and terminating OK line */
-  r->count -= 2;
+  /* remove the terminating OK line */
+  r->count--;
   r->current = 0;
 
   if (r->count == 0)
