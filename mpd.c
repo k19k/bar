@@ -320,12 +320,13 @@ _mpd_connect (mpd *self)
 static void
 _get_response (int fd, char **bufp, size_t *size)
 {
-  size_t len = strlen (*bufp);
+  size_t len = 0;
   char buf[BUFSIZ];
-  ssize_t count;
 
   for ( ; ; )
     {
+      ssize_t count;
+
       if (len + BUFSIZ > *size)
 	{
 	  *size *= 2;
@@ -368,8 +369,6 @@ _mpd_recv (mpd *self, char **bufp)
   *bufp = malloc (size);
   if (*bufp == NULL)
     goto error;
-
-  **bufp = '\0';
 
   _get_response (self->socket, bufp, &size);
 
