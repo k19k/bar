@@ -16,6 +16,8 @@ main(int argc, char *argv[])
   if (mpd_connect (mpdc) != MPD_SUCCESS)
     goto error;
 
+  printf ("connected to MPD version %s\n", mpd_get_version (mpdc));
+
   r = mpd_send_command (mpdc, MPD_COMMAND_CURRENTSONG, NULL);
   if (!r)
     goto error;
