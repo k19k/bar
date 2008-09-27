@@ -111,7 +111,7 @@ const char *_mpd_errors[] = {
   "already connected",
   NULL, 			/* use MPD's ACK message */
   "not MPD on the specified port",
-  "could not connect",
+  "unable to connect",
 };
 
 static void __attribute__((__constructor__))
@@ -158,14 +158,28 @@ mpd_create (void)
   return self;
 }
 
+static void
+_mpd_disconnect (mpd *self)
+{
+  if (self->version)
+    {
+      free (self->version);
+      self->version = NULL;
+    }
+  if (self->socket != -1)
+    {
+      close (self->socket);
+      self->socket = -1;
+    }
+}
+
 void
 mpd_destroy (mpd *self)
 { 
   if (!self)
     return;
 
-  if (self->socket != -1)
-    mpd_disconnect (self);
+  _mpd_disconnect (self);
 
   if (self->hostname)
     free (self->hostname);
@@ -253,21 +267,6 @@ mpd_get_port (mpd *self)
   assert (self != NULL);
 
   return self->port;
-}
-
-static void
-_mpd_disconnect (mpd *self)
-{
-  if (self->version)
-    {
-      free (self->version);
-      self->version = NULL;
-    }
-  if (self->socket != -1)
-    {
-      close (self->socket);
-      self->socket = -1;
-    }
 }
 
 static mpd_error
