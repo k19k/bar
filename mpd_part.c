@@ -54,6 +54,8 @@ format_result (struct info *inf, mpd_result *r)
   const char *s;
   int len = 0;
 
+  inf->state = PLAY;
+
   s = mpd_result_get (r, "Composer");
   if (s)
     len = snprintf (inf->buf, MAX_LEN, "%s", s);
@@ -66,7 +68,17 @@ format_result (struct info *inf, mpd_result *r)
 
   s = mpd_result_get (r, "Title");
   if (s)
-    snprintf (inf->buf + len, MAX_LEN - len, (len > 0) ? " - %s" : "%s", s);
+    len += snprintf (inf->buf + len, MAX_LEN - len,
+		     (len > 0) ? " - %s" : "%s", s);
+
+  if (len == 0)
+    {
+      s = mpd_result_get (r, "file");
+      if (s)
+	snprintf (inf->buf, MAX_LEN, "%s", s);
+      else
+	snprintf (inf->buf, MAX_LEN, "[unknown]");
+    }
 }
 
 static void
