@@ -48,7 +48,7 @@ mpd_disconnect (mpd *)
 
 mpd_result *
 mpd_send_command (mpd *, mpd_command command, ...)
-  __attribute__ ((__nonnull__ (1)));
+  __attribute__ ((__nonnull__ (1), __sentinel__));
 
 const char *
 mpd_result_get (mpd_result *, const char *key)
