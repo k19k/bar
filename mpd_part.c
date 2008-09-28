@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 
@@ -93,13 +94,19 @@ update (struct info *inf)
   mpd_disconnect (inf->client);
 }
 
+static const char *
+_get_text (struct info *inf)
+{
+  return inf->state == PLAY ? inf->buf : "[not playing]";
+}
+
 static void
 paint (struct info *inf, cairo_t *cr)
 {
   assert (inf != NULL);
   assert (cr != NULL);
 
-  cairo_show_text (cr, inf->buf);
+  cairo_show_text (cr, _get_text (inf));
 }
 
 static double
@@ -110,7 +117,7 @@ get_width (struct info *inf, cairo_t *cr)
   assert (inf != NULL);
   assert (cr != NULL);
 
-  cairo_text_extents (cr, inf->buf, &ext);
+  cairo_text_extents (cr, _get_text (inf), &ext);
   return ext.width;
 }
 

@@ -2,9 +2,14 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdarg.h>
+#include <string.h>
 
 #include "parts.h"
 #include "util.h"
+
+/* TODO: reading /proc/acpi/battery/BAT1/<file> triggers some other
+   processes.  Find a way of reading or being notified of the battery
+   state that avoids this. */
 
 struct info {
   int max;
@@ -18,7 +23,7 @@ create (void)
   if (!inf)
     return NULL;
 
-  file_get_keys ("/proc/acpi/battery/BAT1/info",
+  file_get_keys ("/proc/acpi/battery/BAT1/info", ':',
 		 "design capacity", "%d", 1, &inf->max,
 		 NULL);
 
@@ -47,7 +52,7 @@ update (struct info *inf)
 
   assert (inf != NULL);
 
-  file_get_keys ("/proc/acpi/battery/BAT1/state",
+  file_get_keys ("/proc/acpi/battery/BAT1/state", ':',
 		 "charging state", "%as", 1, &buf,
 		 "remaining capacity", "%d", 1, &value,
 		 NULL);

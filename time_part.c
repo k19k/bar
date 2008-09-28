@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include <time.h>
+#include <assert.h>
 
 #include "parts.h"
 
@@ -12,7 +14,7 @@ struct info {
 static struct info *
 create (void)
 {
-  struct info *inf = (sizeof (struct info));
+  struct info *inf = malloc (sizeof (struct info));
   if (!inf)
     return NULL;
 
@@ -48,10 +50,11 @@ update (struct info *inf)
   gettimeofday (&tv, NULL);
 
   inf->buf = strdup (ctime (&tv.tv_sec));
+  inf->buf[strlen (inf->buf) - 1] = '\0';
 }
 
 static void
-paint (void *inf, cairo_t *cr)
+paint (struct info *inf, cairo_t *cr)
 {
   assert (inf != NULL);
   assert (cr != NULL);
@@ -63,7 +66,7 @@ paint (void *inf, cairo_t *cr)
 }
 
 static double
-get_width (void *inf, cairo_t *cr)
+get_width (struct info *inf, cairo_t *cr)
 {
   cairo_text_extents_t ext;
 

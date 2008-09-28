@@ -26,6 +26,6 @@
 void
 file_get_keys (const char *filename, char sep, ...)
 //	       const char *key, const char *scanfmt, size_t nargs, ...)
-  __attribute__ ((__sentinel__, __nonnull__ (1, 3, 4)));
+  __attribute__ ((__sentinel__, __nonnull__ (1)));
 
 #endif	/* UTIL_H */

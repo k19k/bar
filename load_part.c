@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <assert.h>
 
 #include "parts.h"
 
@@ -43,6 +45,7 @@ update (struct info *inf)
   if (f)
     {
       getline (&inf->buf, &inf->n, f);
+      inf->buf[strlen (inf->buf) - 1] = '\0';
       fclose (f);
     }
 }
