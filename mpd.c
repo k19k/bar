@@ -184,9 +184,6 @@ mpd_destroy (mpd *self)
   if (self->hostname)
     free (self->hostname);
 
-  if (self->version)
-    free (self->version);
-
   if (self->last_ack)
     free (self->last_ack);
 }
@@ -218,7 +215,10 @@ mpd_get_version (mpd *self)
   assert (self != NULL);
 
   if (self->socket == -1)
-    _mpd_error(self, MPD_ERROR_NOT_CONNECTED, NULL);
+    {
+      _mpd_error(self, MPD_ERROR_NOT_CONNECTED, NULL);
+      return NULL;
+    }
 
   return self->version;
 }
