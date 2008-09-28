@@ -1,10 +1,12 @@
-tests = mpd_test
+tests = mpd_test file_keys_test
 
 all: $(tests)
 
 CFLAGS = -D_GNU_SOURCE -g -Wall -Werror -MMD -MP
 
 mpd_test: mpd_test.o mpd.o
+
+file_keys_test: file_keys_test.o util.o
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
