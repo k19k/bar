@@ -29,12 +29,17 @@ int
 main (int argc, char *argv[])
 {
   bar *app;
+  Display *dpy;
 
   setup_signals ();
 
-  app = bar_create ();
+  dpy = XOpenDisplay (NULL);
+  if (!dpy)
+    goto error;
+
+  app = bar_create (dpy);
   if (!app)
-    return EXIT_FAILURE;
+    goto bar_error;
 
   bar_add_part (app, &mpd_part, BAR_LEFT);
   bar_add_part (app, &load_part, BAR_RIGHT);
@@ -47,4 +52,9 @@ main (int argc, char *argv[])
   bar_destroy (app);
 
   return EXIT_SUCCESS;
+
+ bar_error:
+  XCloseDisplay (dpy);
+ error:
+  return EXIT_FAILURE;
 }

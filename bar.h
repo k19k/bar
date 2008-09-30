@@ -1,6 +1,8 @@
 #ifndef BAR_H
 #define BAR_H
 
+#include <X11/Xlib.h>
+
 #include "parts.h"
 
 typedef struct bar bar;
@@ -11,7 +13,7 @@ typedef struct bar bar;
 #define BAR_RIGHT  0
 
 bar *
-bar_create (void);
+bar_create (Display *dpy);
 
 void
 bar_destroy (bar *);
