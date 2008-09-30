@@ -410,12 +410,10 @@ _mpd_verify (mpd *self)
     goto error_not_mpd;
 
   self->version = strndup (buf + OFFSET, p - (buf + OFFSET));
+  free (buf);
 
   if (self->version == NULL)
-    {
-      free (buf);
-      return _mpd_error (self, MPD_ERROR, strerror (errno));
-    }
+    return _mpd_error (self, MPD_ERROR, strerror (errno));
 
   return MPD_SUCCESS;
 
