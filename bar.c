@@ -5,13 +5,27 @@
 #include <time.h>
 #include <assert.h>
 
-#include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 
 #include <cairo-xlib.h>
 
 #include "bar.h"
+
+#define _MOTIF_WM_HINTS		"_MOTIF_WM_HINTS"
+#define _NET_WM_STATE		"_NET_WM_STATE"
+#define _NET_WM_STATE_STICKY	"_NET_WM_STATE_STICKY"
+
+#define PROP_MWM_HINTS_ELEMENTS 3
+#define MWM_HINTS_DECORATIONS	(1L << 1)
+#define MWM_DECOR_ALL		(1L << 0)
+#define MWM_DECOR_BORDER	(1L << 1)
+
+typedef struct {
+  unsigned long flags;
+  unsigned long functions;
+  unsigned long decorations;
+} PropMwmHints;
 
 struct element {
   struct part *type;
@@ -38,15 +52,20 @@ struct bar {
 };
 
 bar *
-bar_create (void)
+bar_create (Display *dpy)
 {
-  /* TODO: add MWM hints for a borderless/decorationless window */
-
   int screen;
   bar *self;
-  Display *dpy;
   XClassHint cls_hint;
   XSizeHints size_hints;
+  PropMwmHints mwm_hints = {
+    .flags = MWM_HINTS_DECORATIONS,
+    .decorations = 0,
+  };
+  Atom motif_wm_hints = XInternAtom (dpy, _MOTIF_WM_HINTS, False);
+  Atom net_wm_state = XInternAtom (dpy, _NET_WM_STATE, False);
+  Atom net_wm_state_sticky = XInternAtom (dpy, _NET_WM_STATE_STICKY, False);
+  Atom net_hints[1] = { net_wm_state_sticky };
 
   self = malloc (sizeof (bar));
   if (!self)
@@ -54,16 +73,14 @@ bar_create (void)
 
   memset (self, 0, sizeof (bar));
 
-  dpy = self->dpy = XOpenDisplay (NULL);
-  if (!dpy)
-    goto dpy_error;
+  self->dpy = dpy;
 
   screen = DefaultScreen (dpy);
   self->attr = (XSetWindowAttributes)
     { .event_mask = ExposureMask };
 
   self->height = 16;
-  self->width = DisplayWidth (dpy, screen) - 2;
+  self->width = DisplayWidth (dpy, screen);
   self->dwidth = (double) self->width;
 
   self->window = XCreateWindow (dpy, RootWindow (dpy, screen),
@@ -85,7 +102,7 @@ bar_create (void)
   size_hints = (XSizeHints)
     {
       .flags = PMinSize | PMaxSize | PPosition | PWinGravity,
-      .x = 1, .y = 1,
+      .x = 0, .y = 0,
       .min_width = self->width,
       .min_height = self->height,
       .max_width = self->width,
@@ -96,6 +113,15 @@ bar_create (void)
   XSetWMProperties (dpy, self->window, NULL, NULL, NULL, 0,
 		    &size_hints, NULL, &cls_hint);
   
+  XChangeProperty (dpy, self->window, motif_wm_hints,
+		   motif_wm_hints, 32, PropModeReplace,
+		   (unsigned char *) &mwm_hints,
+		   PROP_MWM_HINTS_ELEMENTS);
+
+  XChangeProperty (dpy, self->window, net_wm_state,
+		   XA_ATOM, 32, PropModeReplace,
+		   (unsigned char *) &net_hints, 1);
+
   XMapWindow (dpy, self->window);
 
   self->target = cairo_xlib_surface_create (dpy, self->window,
@@ -133,8 +159,6 @@ bar_create (void)
  target_error:
   XDestroyWindow (dpy, self->window);
  window_error:
-  XCloseDisplay (dpy);
- dpy_error:
   free (self);
   return NULL;
 }
