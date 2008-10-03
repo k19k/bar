@@ -1,0 +1,8 @@
+# ignore intermediates
+*.o
+*.d
+
+# ignore output executables
+bar
+file_keys_test
+mpd_test
