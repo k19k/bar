@@ -249,7 +249,8 @@ bar_add_part (bar *self, struct part *type, int flags)
   e->type = type;
   e->data = type->create ();
   if (!e->data)
-    fprintf (stderr, "WARNING: creating part of type %s failed\n", type->name);
+    fprintf (stderr, "** WARNING ** part.create() for `%s' failed\n",
+	     type->name);
   e->next = NULL;
 
   if (flags & BAR_APPEND)
