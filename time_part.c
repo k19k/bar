@@ -7,8 +7,10 @@
 
 #include "parts.h"
 
+#define LEN 63
+
 struct info {
-  char *buf;
+  char buf[LEN+1];
 };
 
 static struct info *
@@ -18,7 +20,8 @@ create (void)
   if (!inf)
     return NULL;
 
-  inf->buf = NULL;
+  inf->buf[0] = '\0';
+  inf->buf[LEN] = '\0';
 
   return inf;
 }
@@ -27,30 +30,23 @@ static void
 destroy (struct info *inf)
 {
   if (inf)
-    {
-      if (inf->buf)
-	free (inf->buf);
-      free (inf);
-    }
+    free (inf);
 }
 
 static void
 update (struct info *inf)
 {
   struct timeval tv;
+  char *p;
 
   assert (inf != NULL);
 
-  if (inf->buf != NULL)
-    {
-      free (inf->buf);
-      inf->buf = NULL;
-    }
-
   gettimeofday (&tv, NULL);
 
-  inf->buf = strdup (ctime (&tv.tv_sec));
-  inf->buf[strlen (inf->buf) - 1] = '\0';
+  strncpy (inf->buf, ctime (&tv.tv_sec), LEN);
+  p = strchr (inf->buf, '\n');
+  if (p)
+    *p = '\0';
 }
 
 static void
@@ -58,9 +54,6 @@ paint (struct info *inf, cairo_t *cr)
 {
   assert (inf != NULL);
   assert (cr != NULL);
-
-  if (inf->buf == NULL)
-    return;
 
   cairo_show_text (cr, inf->buf);
 }
@@ -72,9 +65,6 @@ get_width (struct info *inf, cairo_t *cr)
 
   assert (inf != NULL);
   assert (cr != NULL);
-
-  if (inf->buf == NULL)
-    return 0.0;
 
   cairo_text_extents (cr, inf->buf, &ext);
   return ext.width;
