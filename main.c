@@ -43,7 +43,7 @@ main (int argc, char *argv[])
 
   bar_add_part (app, &mpd_part, BAR_LEFT);
   bar_add_part (app, &load_part, BAR_RIGHT);
-  //bar_add_part (app, &batt_part, BAR_RIGHT);
+  bar_add_part (app, &batt_part, BAR_RIGHT);
   bar_add_part (app, &time_part, BAR_RIGHT);
 
   while (bar_update (app) && !signalled)

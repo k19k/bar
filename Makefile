@@ -9,18 +9,23 @@ bar_obj = \
 	main.o \
 	mpd.o \
 	mpd_part.o \
-	time_part.o \
-	util.o
+	time_part.o
+#	util.o
 
-CFLAGS = -D_GNU_SOURCE -g -Wall -Werror -MMD -MP $(CAIRO_CFLAGS)
+CFLAGS = -D_GNU_SOURCE -g -Wall -Werror -MMD -MP \
+	$(CAIRO_CFLAGS) $(LIBHAL_CFLAGS)
 
 mpd_test: mpd_test.o mpd.o
 
 file_keys_test: file_keys_test.o util.o
 
 bar: CAIRO_CFLAGS := $(shell pkg-config --cflags cairo-xlib)
+bar: LIBHAL_CFLAGS := $(shell pkg-config --cflags hal)
 bar: $(bar_obj)
-	$(CC) -o $@ $^ $(shell pkg-config --libs cairo-xlib) -lXmu
+	$(CC) -o $@ $^ \
+		$(shell pkg-config --libs cairo-xlib) \
+		$(shell pkg-config --libs hal) \
+		-lXmu
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
