@@ -84,7 +84,7 @@ bar_create (Display *dpy)
   self->dwidth = (double) self->width;
 
   self->window = XCreateWindow (dpy, RootWindow (dpy, screen),
-				1, DisplayHeight (dpy, screen) - self->height,
+				0, DisplayHeight (dpy, screen) - self->height,
 				self->width, self->height, 0,
 				CopyFromParent, InputOutput,
 				DefaultVisual (dpy, screen),
@@ -101,7 +101,7 @@ bar_create (Display *dpy)
 
   size_hints = (XSizeHints)
     {
-      .flags = PMinSize | PMaxSize | PPosition | PWinGravity,
+      .flags = PMinSize | PMaxSize | PPosition | PWinGravity | USPosition,
       .x = 0, .y = 0,
       .min_width = self->width,
       .min_height = self->height,
