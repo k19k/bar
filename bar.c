@@ -186,15 +186,15 @@ _element_search_and_destroy (struct element **lst, struct element *e)
       _element_destroy (e);
       return 1;
     }
-  iter = iter->next;
   while (iter)
     {
-      if (e == iter)
+      if (e == iter->next)
 	{
 	  iter->next = e->next;
 	  _element_destroy (e);
 	  return 1;
 	}
+      iter = iter->next;
     }
   return 0;
 }
