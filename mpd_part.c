@@ -89,14 +89,11 @@ update (struct info *inf)
   assert (inf != NULL);
 
   if (mpd_connect (inf->client) != MPD_SUCCESS)
-    return;
+    goto stop;
 
   r = mpd_send_command (inf->client, MPD_COMMAND_CURRENTSONG, NULL);
   if (!r || r == MPD_OK)
-    {
-      inf->state = STOP;
-      goto disconnect;
-    }
+    goto disconnect;
 
   format_result (inf, r);
 
@@ -104,6 +101,8 @@ update (struct info *inf)
 
  disconnect:
   mpd_disconnect (inf->client);
+ stop:
+  inf->state = STOP;
 }
 
 static const char *
