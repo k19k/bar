@@ -55,7 +55,7 @@ create (void)
     goto dbus_error;
   else
     {
-      fprintf (stderr, "battery not found");
+      fprintf (stderr, "battery not found\n");
       goto misc_error;
     }
 
@@ -90,6 +90,8 @@ update (struct info *inf)
 {
   int pct;
   int charging;
+  
+  assert (inf != NULL);
 
   pct = libhal_device_get_property_int (inf->hal, BAT1_UDI,
 					BAT_PROP_PERCENT, NULL);

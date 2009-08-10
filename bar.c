@@ -302,11 +302,14 @@ _element_paint_all (struct element *e, cairo_t *cr,
   double dir = (double) direction;
   while (e)
     {
-      double w = e->type->get_width (e->data, cr);
-      double newx = x + (w * dir);
-      cairo_move_to (cr, (dir < 0) ? newx : x, 12.0);
-      e->type->paint (e->data, cr);
-      x = newx + padding * dir;
+      if (e->data)
+      	{
+	  double w = e->type->get_width (e->data, cr);
+      	  double newx = x + (w * dir);
+          cairo_move_to (cr, (dir < 0) ? newx : x, 12.0);
+          e->type->paint (e->data, cr);
+          x = newx + padding * dir;
+        }
       e = e->next;
     }
 }
@@ -335,7 +338,8 @@ _element_update_all (struct element *e)
 {
   while (e)
     {
-      e->type->update (e->data);
+      if (e->data)
+        e->type->update (e->data);
       e = e->next;
     }
 }
