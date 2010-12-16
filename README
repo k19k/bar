@@ -1,0 +1,13 @@
+Simple status bar for X11.
+
+Dependencies
+============
+
+  cairo
+  libhal
+
+Notes
+=====
+
+Things like HAL for battery status detection and MPD status support
+should probably be compiled in optionally.
